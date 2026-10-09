@@ -6,6 +6,7 @@ import { DateTime } from 'luxon';
 import { BookingError } from './bookingService.js';
 import { buildEmails, send } from './emails.js';
 import { abbr, fmt, isValidZone, timeLabel } from './tz.js';
+import { createEmailVerifier } from './emailVerification.js';
 
 const tzSchema = z.string().refine(isValidZone, 'Unknown time zone');
 const slotsQuery = z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), tz: tzSchema });
@@ -16,19 +17,24 @@ const bookingBody = z.object({
   childAge: z.coerce.number().int().min(1, 'Child age must be between 1 and 18').max(18, 'Child age must be between 1 and 18'),
   tz: tzSchema,
   startUtc: z.string().datetime(),
+  verificationToken: z.string().optional(),
 });
+const emailOnly = z.object({ email: z.string().trim().email('Please enter a valid email') });
+const otpBody = emailOnly.extend({ otp: z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code') });
 
 // Per-IP limits held in memory (see README "Not production-ready"). Overridable so tests can use tiny limits.
 export const DEFAULT_LIMITS = {
   read: { windowMs: 60_000, limit: 120 },        // browsing slots
   write: { windowMs: 15 * 60_000, limit: 10 },   // creating bookings
+  otpSend: { windowMs: 15 * 60_000, limit: 10 },
+  otpCheck: { windowMs: 15 * 60_000, limit: 30 },
 };
 const limiter = ({ windowMs, limit }) => rateLimit({
   windowMs, limit, standardHeaders: 'draft-7', legacyHeaders: false,
   message: { code: 'RATE_LIMITED', message: 'Too many requests. Please wait a few minutes and try again.' },
 });
 
-export function createApp(service, { limits = {} } = {}) {
+export function createApp(service, { limits = {}, verifier = createEmailVerifier() } = {}) {
   const L = { ...DEFAULT_LIMITS, ...limits };
   const app = express();
   // Behind a proxy / load balancer set TRUST_PROXY (e.g. 1) so limits see the real client IP.
@@ -59,13 +65,29 @@ export function createApp(service, { limits = {} } = {}) {
     } catch (e) { next(e); }
   });
 
+  app.post('/api/email/otp', limiter(L.otpSend), async (req, res, next) => {
+    try {
+      const { email } = emailOnly.parse(req.body);
+      res.json(await verifier.sendOtp(email));
+    } catch (e) { next(e); }
+  });
+
+  app.post('/api/email/verify', limiter(L.otpCheck), async (req, res, next) => {
+    try {
+      const { email, otp } = otpBody.parse(req.body);
+      res.json({ verified: true, ...(await verifier.verifyOtp(email, otp)) });
+    } catch (e) { next(e); }
+  });
+
   app.post('/api/bookings', limiter(L.write), async (req, res, next) => {
     try {
       const body = bookingBody.parse(req.body);
+      await verifier.assertVerified(body.email, body.verificationToken);
       const result = await service.book({
         name: body.name, email: body.email, childName: body.childName, childAge: body.childAge,
         tz: body.tz, startMs: Date.parse(body.startUtc),
       });
+      await verifier.consume(body.email);
       buildEmails(result).forEach((mail) => send(mail));
       const { booking: b, mentor: m } = result;
       res.status(201).json({
