@@ -25,6 +25,7 @@ export default function App() {
   const [notice, setNotice] = useState(null); // { kind: 'warn' | 'error', text }
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(null);
+  const [verified, setVerified] = useState({ email: '', token: '' });
   const formRef = useRef(null);
   const reqId = useRef(0);
   const [hash, setHash] = useState(window.location.hash);
@@ -61,9 +62,14 @@ export default function App() {
   async function submit() {
     setBusy(true); setNotice(null);
     try {
-      const res = await api('/bookings', { method: 'POST', body: JSON.stringify({ ...form, tz, startUtc: sel.startUtc }) });
+      const res = await api('/bookings', { method: 'POST', body: JSON.stringify({ ...form, tz, startUtc: sel.startUtc, verificationToken: verified.token }) });
       setDone(res); // backend returns the canonical classroom link used by confirmation emails
     } catch (err) {
+      if (err.code === 'EMAIL_NOT_VERIFIED') {
+        setVerified({ email: '', token: '' });
+        setNotice({ kind: 'error', text: err.message });
+        return;
+      }
       setSel(null);
       setNotice(err.code === 'NO_MENTOR_AVAILABLE'
         ? { kind: 'warn', text: 'That time was just taken by another family. Here are the times still open.' }
@@ -76,7 +82,7 @@ export default function App() {
   if (route) return <Classroom route={route} onExit={() => { window.location.hash = ''; }} />;
 
 
-  const reset = () => { setDone(null); setSel(null); setNotice(null); load(); window.scrollTo({ top: 0 }); };
+  const reset = () => { setDone(null); setSel(null); setNotice(null); setVerified({ email: '', token: '' }); load(); window.scrollTo({ top: 0 }); };
   const step = done ? 3 : sel ? 2 : 1;
   const card = 'rounded-3xl border border-ink-100 bg-white p-5 shadow-[0_1px_2px_rgba(20,38,42,0.06),0_16px_40px_-20px_rgba(20,38,42,0.25)] sm:p-7';
   const selectCls = 'mt-1.5 w-full appearance-none rounded-xl border border-ink-200 bg-white px-3.5 py-3 pr-9 text-sm font-medium text-ink-800 hover:border-ink-300 focus-visible:border-ink-500';
@@ -158,7 +164,8 @@ export default function App() {
                 {sel && (
                   <div ref={formRef} className="mt-6">
                     <DetailsForm form={form} setForm={setForm} slot={sel} date={date} tzAbbr={data?.tzAbbr}
-                      busy={busy} onSubmit={submit} onChange={() => setSel(null)} />
+                      busy={busy} onSubmit={submit} onChange={() => setSel(null)}
+                      verified={verified} onVerified={(email, token) => setVerified({ email, token })} />
                   </div>
                 )}
               </>
