@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { EMAIL_RE, longDate } from '../lib.js';
 import { Icon, icons, Spinner } from './ui.jsx';
+import EmailField from './EmailField.jsx';
 
-export default function DetailsForm({ form, setForm, slot, date, tzAbbr, busy, onSubmit, onChange }) {
+export default function DetailsForm({ form, setForm, slot, date, tzAbbr, busy, onSubmit, onChange, verified, onVerified }) {
   const [touched, setTouched] = useState({});
   const errors = {
     name: form.name.trim() ? '' : "Please enter the parent's name",
@@ -11,6 +12,7 @@ export default function DetailsForm({ form, setForm, slot, date, tzAbbr, busy, o
     childAge: !form.childAge ? 'Please enter the child age' : Number(form.childAge) >= 1 && Number(form.childAge) <= 18 ? '' : 'Child age must be between 1 and 18',
   };
   const show = (k) => touched[k] && errors[k];
+  const isVerified = !!verified.token && verified.email === form.email.trim().toLowerCase();
 
   const field = (k) =>
     'mt-1.5 w-full rounded-xl border bg-white px-3.5 py-3 text-base transition placeholder:text-ink-400 ' +
@@ -20,6 +22,7 @@ export default function DetailsForm({ form, setForm, slot, date, tzAbbr, busy, o
     e.preventDefault();
     setTouched({ name: true, email: true, childName: true, childAge: true });
     if (errors.name || errors.email || errors.childName || errors.childAge) return;
+    if (!isVerified) return; // the button is disabled too; the server also refuses unverified bookings
     onSubmit();
   }
 
@@ -43,12 +46,8 @@ export default function DetailsForm({ form, setForm, slot, date, tzAbbr, busy, o
       </label>
       {show('name') && <p id="err-name" className="mt-1 text-sm text-rose-600">{errors.name}</p>}
 
-      <label className="mt-4 block text-sm font-semibold" htmlFor="parent-email">Email
-        <input id="parent-email" type="email" inputMode="email" className={field('email')} autoComplete="email" placeholder="you@example.com" value={form.email}
-          aria-invalid={!!show('email')} aria-describedby={show('email') ? 'err-email' : undefined}
-          onBlur={() => setTouched((t) => ({ ...t, email: true }))} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-      </label>
-      {show('email') && <p id="err-email" className="mt-1 text-sm text-rose-600">{errors.email}</p>}
+      <EmailField value={form.email} error={show('email')} verified={verified} onVerified={onVerified}
+        onBlur={() => setTouched((t) => ({ ...t, email: true }))} onChange={(v) => setForm({ ...form, email: v })} />
 
       <label className="mt-4 block text-sm font-semibold" htmlFor="child-name">Child's name
         <input id="child-name" className={field('childName')} autoComplete="off" placeholder="e.g. Aarav Mehta" value={form.childName}
@@ -63,10 +62,10 @@ export default function DetailsForm({ form, setForm, slot, date, tzAbbr, busy, o
           onBlur={() => setTouched((t) => ({ ...t, childAge: true }))} onChange={(e) => setForm({ ...form, childAge: e.target.value })} />
       </label>
       {show('childAge') && <p id="err-child-age" className="mt-1 text-sm text-rose-600">{errors.childAge}</p>}
-      <p className="mt-1.5 flex items-center gap-1.5 text-xs text-ink-500"><Icon d={icons.mail} className="h-3.5 w-3.5" /> Your class link will be emailed here.</p>
-
-      <button disabled={busy}
-        className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl btn-brand px-5 py-3.5 text-base">
+      
+      {!isVerified && <p className="mt-5 text-center text-sm text-rose-600">Verify your email to confirm the booking.</p>}
+      <button disabled={busy || !isVerified}
+        className={(isVerified ? "mt-5" : "mt-2") + " flex w-full items-center justify-center gap-2 rounded-xl btn-brand px-5 py-3.5 text-base"}>
         {busy ? <><Spinner /> Booking your class…</> : <>Confirm {slot.label} <Icon d={icons.right} className="h-4 w-4" /></>}
       </button>
     </form>
