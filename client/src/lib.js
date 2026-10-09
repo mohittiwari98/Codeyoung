@@ -49,10 +49,14 @@ export function groupSlots(slots, tz) {
 }
 
 // ---- API ----
+// Locally VITE_API_URL is unset, so requests go to /api (Vite dev proxy).
+// In production set VITE_API_URL to the backend origin, e.g. https://your-api.onrender.com (no trailing slash, no /api).
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '') + '/api';
+
 export async function api(path, opts) {
   let r;
   try {
-    r = await fetch('/api' + path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+    r = await fetch(API_BASE + path, { headers: { 'Content-Type': 'application/json' }, ...opts });
   } catch {
     throw Object.assign(new Error("Can't reach the server. Check your connection and try again."), { code: 'NETWORK' });
   }
