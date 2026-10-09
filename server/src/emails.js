@@ -36,7 +36,9 @@ export async function send(mail) {
   try {
     const info = await (await getTransport()).sendMail({ from: process.env.MAIL_FROM || process.env.SMTP_USER || 'Codeyoung <no-reply@codeyoung.example>', ...mail });
     console.log(`Email to ${mail.to}:`, nodemailer.getTestMessageUrl(info) || info.message || 'sent');
+    return true;
   } catch (e) {
     console.error(`Email to ${mail.to} failed:`, e.message);
+    return false;
   }
 }
