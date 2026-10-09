@@ -31,3 +31,17 @@ export const Booking = model('Booking', bookingSchema);
 const daySchema = new Schema({ mentorId: Schema.Types.ObjectId, date: String, count: { type: Number, default: 0 } });
 daySchema.index({ mentorId: 1, date: 1 }, { unique: true });
 export const MentorDay = model('MentorDay', daySchema);
+
+// One document per parent email: holds the pending OTP (hashed) and, once verified, a hashed proof token.
+const verifSchema = new Schema({
+  email: { type: String, required: true, unique: true }, // normalised: trimmed + lower-case
+  otpHash: String,
+  salt: String,
+  otpExpiresAt: Date,
+  attempts: { type: Number, default: 0 },
+  lastSentAt: Date,
+  tokenHash: String,
+  verifiedAt: Date,
+  purgeAt: { type: Date, index: { expireAfterSeconds: 0 } }, // Mongo TTL cleanup
+});
+export const EmailVerification = model('EmailVerification', verifSchema);
