@@ -6,7 +6,7 @@ A production-minded take-home implementation for the Codeyoung trial-class booki
 - Frontend: React + Vite
 - Backend: Node.js + Express
 - Database: MongoDB + Mongoose
-- Time zones: Luxon + IANA zones
+- Time zones: Luxon + IANA zones 
 - Email: Nodemailer (Gmail SMTP or Ethereal fallback)
 
 ## Product flow
