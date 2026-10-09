@@ -1,0 +1,15 @@
+{
+  "name": "trial-booking-server",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "seed": "node src/seed.js",
+    "test": "node --test --test-concurrency=1 test/"
+  },
+  "dependencies": {
+    "cors": "^2.8.5", "dotenv": "^16.4.5", "express": "^4.19.2", "express-rate-limit": "^7.4.0", "luxon": "^3.5.0",
+    "mongoose": "^8.5.0", "nodemailer": "^6.9.14", "zod": "^3.23.8"
+  },
+  "devDependencies": { "mongodb-memory-server": "^10.0.0" }
+}

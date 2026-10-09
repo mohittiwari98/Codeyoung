@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+/* Codeyoung brand tokens: yellow from the logo mark, deep teal ink from the headings */
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --color-brand-50: #fff8e1;
+  --color-brand-100: #ffefb8;
+  --color-brand-200: #ffe48a;
+  --color-brand-300: #ffd65c;
+  --color-brand-400: #ffc93c;
+  --color-brand-500: #f5b316;
+  --color-brand-600: #d99700;
+  --color-brand-700: #8f6200;
+  --color-brand-800: #6a4a00;
+  --color-orange-logo: #f28c28;
+
+  --color-ink-50: #f5f8f8;
+  --color-ink-100: #e8eeee;
+  --color-ink-200: #cfdcdc;
+  --color-ink-300: #a3bdbf;
+  --color-ink-400: #759699;
+  --color-ink-500: #55787c;
+  --color-ink-600: #3f6165;
+  --color-ink-700: #2f4b4f;
+  --color-ink-800: #213739;
+  --color-ink-900: #14262a;
+  --color-ink-950: #0c1a1d;
+
+  --animate-fade-up: fade-up 0.35s ease-out both;
+  --animate-fall: fall 2.8s ease-in forwards;
+  --animate-pop: pop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fall {
+    0% { opacity: 1; transform: translateY(-20px) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(420px) rotate(540deg); }
+  }
+  @keyframes pop {
+    0% { opacity: 0; transform: scale(0.4); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+}
+
+html { scroll-behavior: smooth; }
+body {
+  @apply font-sans antialiased text-ink-800;
+  min-height: 100vh;
+  background: #fafafa;
+}
+
+/* Signature Codeyoung button: warm yellow with a darker "lip" underneath */
+.btn-brand {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-brand-300 to-brand-400 font-semibold text-ink-900;
+  box-shadow: 0 3px 0 0 #e0a100;
+  transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+}
+.btn-brand:hover { filter: brightness(1.04); }
+.btn-brand:active { transform: translateY(2px); box-shadow: 0 1px 0 0 #e0a100; }
+.btn-brand:disabled { opacity: .7; cursor: not-allowed; }
+
+/* Hand-drawn underline under key words, like the Codeyoung site */
+.scribble { background: linear-gradient(transparent 62%, var(--color-brand-200) 62%, var(--color-brand-200) 88%, transparent 88%); }
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+:focus-visible { outline: 2px solid var(--color-ink-600); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
